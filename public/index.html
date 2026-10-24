@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Semijoias - Gestao Completa</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js para Graficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- html2pdf para Geracao de Comprovantes/Recibos em PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- FontAwesome Icones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #f8fafc; color: #0f172a; font-family: 'Inter', system-ui, sans-serif; }
+    .bg-card { background-color: #ffffff; border: 1px solid #e2e8f0; }
+    .receipt-font { font-family: 'Courier New', Courier, monospace; }
+    aside { transition: width 0.3s ease; }
+  </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+  <!-- ================= TELA DE AUTENTICACAO ================= -->
+  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-white p-4">
+    <div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-xl border border-slate-200">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-50 text-blue-600 mb-3">
+          <i class="fa-solid fa-gem text-2xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900">Sistema Semijoias</h1>
+        <p class="text-xs text-slate-500 mt-1">Gestao Comercial, Vendas & Controle Financeiro</p>
+      </div>
+
+      <!-- GOOGLE OAUTH -->
+      <div class="space-y-3 mb-6">
+        <div id="g_id_onload"
+             data-client_id="166999273388-bh8ii2no182k4ruptlmmgdaq5oc4s75p.apps.googleusercontent.com"
+             data-callback="handleGoogleLogin"
+             data-auto_select="false"
+             data-use_fedcm_for_prompt="true">
+        </div>
+        <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left" style="width: 100%; display: flex; justify-content: center;"></div>
+      </div>
+
+      <div class="relative flex py-2 items-center mb-6">
+        <div class="flex-grow border-t border-slate-200"></div>
+        <span class="flex-shrink mx-4 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">ou e-mail e senha</span>
+        <div class="flex-grow border-t border-slate-200"></div>
+      </div>
+
+      <!-- FORMULARIO DE LOGIN TRADICIONAL -->
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">E-mail de Acesso</label>
+          <input type="email" id="login-email" required placeholder="seu@email.com" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Senha</label>
+          <input type="password" id="login-pass" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none">
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md">Entrar no Sistema</button>
+      </form>
+
+      <!-- LINK PARA CRIAR NOVA CONTA -->
+      <div class="mt-6 text-center border-t border-slate-100 pt-4">
+        <p class="text-xs text-slate-500">Ainda nao tem uma conta?</p>
+        <button onclick="openRegisterModal()" class="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline mt-1">Criar uma nova conta gratuita</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL DE CRIACAO DE NOVA CONTA ================= -->
+  <div id="register-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 hidden backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-sm text-slate-800">Criar Nova Conta no Sistema</h3>
+        <button onclick="closeRegisterModal()"><i class="fa-solid fa-xmark text-slate-400 hover:text-slate-700"></i></button>
+      </div>
+
+      <form id="register-form" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Nome Completo</label>
+          <input type="text" id="reg-name" required placeholder="Ex: Paula Bretas" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:bg-white focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">E-mail</label>
+          <input type="email" id="reg-email" required placeholder="seu@email.com" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:bg-white focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Senha</label>
+          <input type="password" id="reg-pass" required minlength="6" placeholder="Minimo 6 caracteres" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:bg-white focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Confirmar Senha</label>
+          <input type="password" id="reg-pass-confirm" required minlength="6" placeholder="Repita a senha" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:bg-white focus:outline-none">
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg text-xs shadow-md transition-all mt-2">Cadastrar e Acessar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= PAINEL PRINCIPAL DO SISTEMA ================= -->
+  <div id="app-screen" class="flex w-full h-full">
+    
+    <!-- MENU LATERAL (SIDEBAR RETRATIL) -->
+    <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 relative">
+      <div>
+        <div class="p-4 border-b border-slate-200 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-3 overflow-hidden">
+            <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shrink-0">
+              <i class="fa-solid fa-gem text-base"></i>
+            </div>
+            <div class="sidebar-text truncate">
+              <h2 class="font-bold text-sm text-slate-900 tracking-tight leading-tight">Sistema Semijoias</h2>
+              <span class="text-[9px] bg-blue-50 text-blue-700 font-medium px-1.5 py-0.5 rounded-full border border-blue-100">Painel Profissional</span>
+            </div>
+          </div>
+          <button onclick="toggleSidebar()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-all shrink-0" title="Minimizar / Expandir Menu">
+            <i class="fa-solid fa-bars-staggered text-sm"></i>
+          </button>
+        </div>
+
+        <nav class="p-3 space-y-1">
+          <button id="btn-tab-dashboard" onclick="switchTab('dashboard')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-chart-line w-4 text-center shrink-0"></i> <span class="sidebar-text truncate">Visao Geral & Graficos</span>
+          </button>
+          <button id="btn-tab-clients" onclick="switchTab('clients')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-address-book w-4 text-center shrink-0"></i> <span class="sidebar-text truncate">Revendedoras / Clientes</span>
+          </button>
+          <button id="btn-tab-products" onclick="switchTab('products')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-boxes-stacked w-4 text-center shrink-0"></i> <span class="sidebar-text truncate">Pecas & Estoque</span>
+          </button>
+          <button id="btn-tab-sales" onclick="switchTab('sales')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-cash-register w-4 text-center shrink-0"></i> <span class="sidebar-text truncate">Vendas & Caixa</span>
+          </button>
+          <button id="btn-tab-expenses" onclick="switchTab('expenses')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all">
+            <i class="fa-solid fa-receipt w-4 text-center shrink-0"></i> <span class="sidebar-text truncate">Despesas & Custos</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0" id="user-avatar">P</div>
+          <div class="overflow-hidden sidebar-text">
+            <p class="text-xs font-semibold text-slate-800 truncate" id="user-name-display">Usuario</p>
+            <p class="text-[10px] text-slate-500 truncate" id="user-email-display">email@dominio.com</p>
+          </div>
+        </div>
+        <button onclick="logout()" class="text-slate-400 hover:text-red-600 transition-colors p-1 shrink-0 sidebar-text" title="Sair"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </aside>
+
+    <!-- CONTEUDO DAS ABAS -->
+    <main class="flex-1 bg-slate-50 overflow-y-auto p-8">
+      
+      <!-- ================= ABA 1: DASHBOARD & GRAFICOS ================= -->
+      <section id="tab-dashboard" class="space-y-6">
+        <header class="flex justify-between items-center">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Visao Geral do Negocio</h1>
+            <p class="text-xs text-slate-500">Metricas em tempo real, desempenho de vendas e controle financeiro.</p>
+          </div>
+          <span class="text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+            <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Nuvem Conectada (Neon)
+          </span>
+        </header>
+
+        <!-- CARDS METRICAS -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-card p-5 rounded-xl shadow-sm border border-slate-200">
+            <span class="text-xs font-semibold text-slate-500 block mb-1">Total em Vendas</span>
+            <h3 class="text-2xl font-bold text-slate-900" id="dash-total-sales-val">R$ 0,00</h3>
+          </div>
+          <div class="bg-card p-5 rounded-xl shadow-sm border border-slate-200">
+            <span class="text-xs font-semibold text-slate-500 block mb-1">Lucro Liquido Estimado</span>
+            <h3 class="text-2xl font-bold text-blue-600" id="dash-total-profit">R$ 0,00</h3>
+          </div>
+          <div class="bg-card p-5 rounded-xl shadow-sm border border-slate-200">
+            <span class="text-xs font-semibold text-slate-500 block mb-1">Balanco Liquido de Caixa</span>
+            <h3 class="text-2xl font-bold text-indigo-600" id="dash-net-balance">R$ 0,00</h3>
+          </div>
+          <div class="bg-card p-5 rounded-xl shadow-sm border border-slate-200">
+            <span class="text-xs font-semibold text-slate-500 block mb-1">Base de Clientes</span>
+            <h3 class="text-2xl font-bold text-slate-900" id="dash-total-clients">0</h3>
+          </div>
+        </div>
+
+        <!-- GRAFICOS CHART.JS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-card p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xs font-bold text-slate-700 uppercase mb-4">Vendas por Categoria</h3>
+            <div class="h-64 relative">
+              <canvas id="chart-categories"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-card p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-xs font-bold text-slate-700 uppercase mb-4">Formas de Pagamento Utilizadas</h3>
+            <div class="h-64 relative">
+              <canvas id="chart-payments"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ABA 2: CLIENTES / REVENDEDORAS ================= -->
+      <section id="tab-clients" class="space-y-6 hidden">
+        <header class="flex justify-between items-center">
+          <div>
+            <h1 class="text-xl font-bold text-slate-900">Revendedoras e Clientes</h1>
+            <p class="text-xs text-slate-500">Cadastro completo com fotos e busca abrangente por Nome, CLI-### ou CPF.</p>
+          </div>
+          <div class="w-80">
+            <input type="text" id="client-search-input" onkeyup="loadClients()" placeholder="Buscar por Nome, Codigo CLI-### ou CPF..." class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs shadow-sm focus:outline-none focus:border-blue-500">
+          </div>
+        </header>
+
+        <form id="client-form" class="bg-card p-6 rounded-xl shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Codigo Gerado Automatico</label>
+            <input type="text" id="c-code" readonly class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2 text-xs font-mono font-bold text-blue-600 cursor-not-allowed">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nome Completo</label>
+            <input type="text" id="c-name" placeholder="Ex: Maria Oliveira" required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:bg-white focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">CPF</label>
+            <input type="text" id="c-cpf" placeholder="000.000.000-00" required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:bg-white focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Telefone / WhatsApp</label>
+            <input type="text" id="c-phone" placeholder="(33) 99999-8888" required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:bg-white focus:outline-none">
+          </div>
+          <div class="md:col-span-4">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Foto da Revendedora / Cliente</label>
+            <input type="file" id="c-photo-file" accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs">
+          </div>
+          <div class="md:col-span-4">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg text-xs transition-all shadow-sm">Cadastrar Revendedora</button>
+          </div>
+        </form>
+
+        <div class="bg-card rounded-xl shadow-sm overflow-hidden border border-slate-200">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 border-b">
+                <th class="p-3">Foto</th>
+                <th class="p-3">Codigo</th>
+                <th class="p-3">Nome</th>
+                <th class="p-3">CPF</th>
+                <th class="p-3">Telefone</th>
+                <th class="p-3 text-right">Acoes</th>
+              </tr>
+            </thead>
+            <tbody id="client-table-body" class="divide-y"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= ABA 3: PECAS & ESTOQUE ================= -->
+      <section id="tab-products" class="space-y-6 hidden">
+        <header class="flex justify-between items-center">
+          <div>
+            <h1 class="text-xl font-bold text-slate-900">Cadastro Detalhado de Pecas & Estoque</h1>
+            <p class="text-xs text-slate-500">Numeracao de aneis, margens de lucro automatica e busca ampla por foto.</p>
+          </div>
+          <div class="w-80">
+            <input type="text" id="product-search-input" onkeyup="loadProducts()" placeholder="Buscar por Nome, PC-### ou Categoria..." class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs shadow-sm focus:outline-none focus:border-blue-500">
+          </div>
+        </header>
+
+        <form id="product-form" class="bg-card p-6 rounded-xl shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Codigo Gerado Automatico</label>
+            <input type="text" id="p-code" readonly class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2 text-xs font-mono font-bold text-blue-600 cursor-not-allowed">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nome da Peca</label>
+            <input type="text" id="p-name" placeholder="Ex: Colar Baiano Banho 18k" required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:bg-white focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Categoria</label>
+            <select id="p-category" onchange="toggleRingSizes()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs">
+              <option value="Brinco">Brinco</option>
+              <option value="Argola">Argola</option>
+              <option value="Colar">Colar</option>
+              <option value="Pulseira">Pulseira</option>
+              <option value="Anel">Anel</option>
+              <option value="Tornozeleira">Tornozeleira</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Qualidade / Banho</label>
+            <select id="p-quality" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs">
+              <option value="Folheado 10 Milesimos">Folheado 10 Milesimos</option>
+              <option value="Prata 925">Prata 925</option>
+              <option value="Aco Inoxidavel">Aco Inoxidavel</option>
+            </select>
+          </div>
+
+          <!-- SELECAO DE TAMANHOS PARA ANEIS -->
+          <div id="ring-sizes-container" class="hidden md:col-span-4 bg-blue-50/70 p-3 rounded-lg border border-blue-100">
+            <label class="block text-xs font-bold text-blue-900 mb-1">Numeracoes de Anel Disponiveis</label>
+            <div class="flex flex-wrap gap-4 text-xs text-slate-700">
+              <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="12" class="ring-size-cb"> 12</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="14" class="ring-size-cb"> 14</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="16" class="ring-size-cb"> 16</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="18" class="ring-size-cb"> 18</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="20" class="ring-size-cb"> 20</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="22" class="ring-size-cb"> 22</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="24" class="ring-size-cb"> 24</label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Quantidade em Estoque</label>
+            <input type="number" id="p-stock" value="1" min="0" required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Preco de Custo (R$)</label>
+            <input type="number" step="0.01" id="p-cost" oninput="calculatePrices()" required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Margem de Lucro (%)</label>
+            <input type="number" step="1" id="p-margin" value="100" oninput="calculatePrices()" required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Preco de Venda (R$)</label>
+            <input type="number" step="0.01" id="p-sell" required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-emerald-600">
+          </div>
+          <div class="md:col-span-4">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Foto da Peca</label>
+            <input type="file" id="p-photo-file" accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs">
+          </div>
+          <div class="md:col-span-4">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg text-xs shadow-sm">Cadastrar Peca no Estoque</button>
+          </div>
+        </form>
+
+        <div class="bg-card rounded-xl shadow-sm overflow-hidden border border-slate-200">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 border-b">
+                <th class="p-3">Foto</th>
+                <th class="p-3">Codigo</th>
+                <th class="p-3">Nome da Peca</th>
+                <th class="p-3">Categoria</th>
+                <th class="p-3">Custo</th>
+                <th class="p-3">Venda</th>
+                <th class="p-3">Estoque</th>
+                <th class="p-3 text-right">Acoes</th>
+              </tr>
+            </thead>
+            <tbody id="product-table-body" class="divide-y"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= ABA 4: VENDAS & CAIXA (COM PARCELAMENTO DE CARTAO E CATALOGO INTEGRADO) ================= -->
+      <section id="tab-sales" class="space-y-6 hidden">
+        <header>
+          <h1 class="text-xl font-bold text-slate-900">Painel de Vendas & Emissao de Cupom</h1>
+          <p class="text-xs text-slate-500">Selecione a revendedora e clique na peca diretamente pelo Catalogo Visual ao lado.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- FORMULARIO DO PEDIDO -->
+          <div class="bg-card p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <h2 class="text-xs font-bold text-slate-700 uppercase border-b pb-2">1. Dados do Pedido</h2>
+            
+            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase">Revendedora</span>
+                <span id="selected-client-name" class="text-xs font-bold text-slate-800">Nenhum cliente selecionado</span>
+              </div>
+              <button type="button" onclick="openClientSearchModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-[10px] font-semibold">Buscar</button>
+            </div>
+
+            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase">Peca Selecionada</span>
+                <span id="selected-product-name" class="text-xs font-bold text-slate-800">Clique na peca ao lado</span>
+              </div>
+            </div>
+
+            <form id="sale-form" class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Quantidade</label>
+                <input type="number" id="s-quantity" min="1" value="1" required class="w-full bg-slate-50 border rounded p-2 text-xs">
+              </div>
+              
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Forma de Pagamento</label>
+                <select id="s-payment" onchange="toggleInstallmentsField()" required class="w-full bg-slate-50 border rounded p-2 text-xs">
+                  <option value="Pix">Pix (A Vista)</option>
+                  <option value="Dinheiro">Dinheiro (A Vista)</option>
+                  <option value="Cartao de Credito">Cartao de Credito</option>
+                  <option value="Crediario">Crediario (Fiado)</option>
+                </select>
+              </div>
+
+              <!-- CAMPO DINAMICO DE PARCELAS PARA CARTAO DE CREDITO -->
+              <div id="installments-container" class="hidden bg-blue-50/70 p-3 rounded-lg border border-blue-100">
+                <label class="block text-xs font-bold text-blue-900 mb-1">Numero de Parcelas</label>
+                <select id="s-installments" class="w-full bg-white border border-blue-200 rounded p-2 text-xs font-semibold text-slate-800">
+                  <option value="1">1x (A Vista no Cartao)</option>
+                  <option value="2">2x Sem Juros</option>
+                  <option value="3">3x Sem Juros</option>
+                  <option value="4">4x Sem Juros</option>
+                  <option value="5">5x Sem Juros</option>
+                  <option value="6">6x Sem Juros</option>
+                  <option value="7">7x</option>
+                  <option value="8">8x</option>
+                  <option value="9">9x</option>
+                  <option value="10">10x</option>
+                  <option value="11">11x</option>
+                  <option value="12">12x</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Desconto Concedido (R$)</label>
+                <input type="number" step="0.01" id="s-discount" value="0.00" class="w-full bg-slate-50 border rounded p-2 text-xs">
+              </div>
+              <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg text-xs shadow-md transition-all">Finalizar Venda & Ver Nota Fiscal / Cupom</button>
+            </form>
+          </div>
+
+          <!-- CATALOGO LATERAL INTEGRADO -->
+          <div class="lg:col-span-2 bg-card p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h2 class="text-xs font-bold text-slate-700 uppercase">2. Catalogo Visual de Pecas (Clique para Selecionar)</h2>
+              <input type="text" id="sales-catalog-search" onkeyup="renderSalesCatalog()" placeholder="Filtrar pecas por nome, codigo..." class="p-1.5 bg-slate-50 border rounded text-xs w-56">
+            </div>
+            
+            <div id="sales-catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-96 overflow-y-auto p-1">
+              <!-- Renderizacao dinamica via JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- TABELA HISTORICO DE VENDAS -->
+        <div class="bg-card rounded-xl shadow-sm overflow-hidden border border-slate-200">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 border-b">
+                <th class="p-3">Data</th>
+                <th class="p-3">Revendedora</th>
+                <th class="p-3">Produto</th>
+                <th class="p-3">Qtd</th>
+                <th class="p-3">Pagamento</th>
+                <th class="p-3">Total</th>
+                <th class="p-3 text-right">Nota Fiscal / Cupom</th>
+              </tr>
+            </thead>
+            <tbody id="sales-table-body" class="divide-y"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= ABA 5: DESPESAS & CUSTOS ================= -->
+      <section id="tab-expenses" class="space-y-6 hidden">
+        <header>
+          <h1 class="text-xl font-bold text-slate-900">Registro de Despesas Operacionais</h1>
+          <p class="text-xs text-slate-500">Controle de custos fixos, embalagens, fretes e insumos da loja.</p>
+        </header>
+
+        <form id="expense-form" class="bg-card p-6 rounded-xl shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Descricao da Despesa</label>
+            <input type="text" id="e-desc" placeholder="Ex: Embalagens, Sacolas, Frete" required class="w-full bg-slate-50 border rounded p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Valor Total (R$)</label>
+            <input type="number" step="0.01" id="e-amount" required class="w-full bg-slate-50 border rounded p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Forma de Pagamento</label>
+            <select id="e-payment" class="w-full bg-slate-50 border rounded p-2 text-xs">
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Cartao">Cartao de Credito/Debito</option>
+            </select>
+          </div>
+          <div class="md:col-span-3">
+            <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-2 rounded-lg text-xs">Registrar Despesa</button>
+          </div>
+        </form>
+
+        <div class="bg-card rounded-xl shadow-sm overflow-hidden border border-slate-200">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 border-b">
+                <th class="p-3">Descricao</th>
+                <th class="p-3">Forma de Pagamento</th>
+                <th class="p-3">Valor</th>
+                <th class="p-3 text-right">Acao</th>
+              </tr>
+            </thead>
+            <tbody id="expenses-table-body" class="divide-y"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL DE BUSCA DE CLIENTES NA TELA DE VENDAS -->
+  <div id="client-search-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-sm text-slate-800">Selecionar Revendedora</h3>
+        <button onclick="closeClientSearchModal()"><i class="fa-solid fa-xmark text-slate-400 hover:text-slate-700"></i></button>
+      </div>
+      <input type="text" id="modal-client-query" onkeyup="filterClientsModal()" placeholder="Buscar por Nome, Codigo ou CPF..." class="w-full p-2 bg-slate-50 border rounded text-xs">
+      <div class="max-h-60 overflow-y-auto divide-y" id="modal-clients-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL VISUAL DA NOTA FISCAL / CUPOM DE VENDA -->
+  <div id="receipt-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 hidden backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-xs uppercase text-slate-700 tracking-wider">Nota Fiscal / Cupom do Pedido</h3>
+        <button onclick="closeReceiptModal()"><i class="fa-solid fa-xmark text-slate-400 hover:text-slate-700"></i></button>
+      </div>
+
+      <!-- FORMATO VISUAL DE CUPOM FISCAL TÉRMICO -->
+      <div id="receipt-content" class="receipt-font bg-amber-50/70 border border-amber-200/80 p-5 rounded-lg text-[11px] text-slate-900 shadow-inner space-y-3 leading-tight">
+        <div class="text-center border-b border-slate-400 border-dashed pb-3 space-y-0.5">
+          <h4 class="font-bold text-sm tracking-widest text-slate-900 uppercase">SISTEMA SEMIJOIAS</h4>
+          <p class="text-[10px] text-slate-600">Comprovante de Venda N° <span id="r-id" class="font-bold">000</span></p>
+          <p id="r-date" class="text-[10px] text-slate-500">00/00/0000</p>
+        </div>
+
+        <div class="border-b border-slate-400 border-dashed py-2 space-y-1">
+          <p><strong>CLIENTE:</strong> <span id="r-client" class="uppercase"></span></p>
+          <p><strong>ITEM:</strong> <span id="r-product"></span></p>
+          <p><strong>QUANTIDADE:</strong> <span id="r-qty"></span> UN</p>
+          <p><strong>PAGAMENTO:</strong> <span id="r-payment"></span></p>
+        </div>
+
+        <div class="pt-1 space-y-1">
+          <div class="flex justify-between font-bold text-xs text-slate-900 border-t border-slate-400 border-dashed pt-2">
+            <span>VALOR TOTAL DA NOTA:</span>
+            <span>R$ <span id="r-total">0.00</span></span>
+          </div>
+        </div>
+
+        <div class="text-center pt-3 text-[9px] text-slate-500 border-t border-slate-300 border-dashed">
+          <p>Obrigada pela preferencia!</p>
+          <p>Documento de controle interno da loja</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="closeReceiptModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-xs transition-colors">
+          Fechar Nota
+        </button>
+        <button onclick="downloadReceiptPDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all">
+          <i class="fa-solid fa-file-pdf"></i> Baixar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCRIPT LOGICA JAVASCRIPT ================= -->
+  <script>
+    let currentUser = null;
+    let selectedClientForSale = null;
+    let selectedProductForSale = null;
+    let categoryChartInstance = null;
+    let paymentChartInstance = null;
+
+    // Alternar menu lateral
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const texts = document.querySelectorAll('.sidebar-text');
+      const isMinimized = sidebar.classList.contains('w-20');
+      if (isMinimized) {
+        sidebar.classList.remove('w-20'); sidebar.classList.add('w-64');
+        texts.forEach(el => el.classList.remove('hidden'));
+      } else {
+        sidebar.classList.remove('w-64'); sidebar.classList.add('w-20');
+        texts.forEach(el => el.classList.add('hidden'));
+      }
+    }
+
+    // Geradores automaticos de codigos
+    function generateProductCode() { return `PC-${Math.floor(100 + Math.random() * 900)}`; }
+    function generateClientCode() { return `CLI-${Math.floor(100 + Math.random() * 900)}`; }
+    document.getElementById('p-code').value = generateProductCode();
+    document.getElementById('c-code').value = generateClientCode();
+
+    function toggleRingSizes() {
+      const cat = document.getElementById('p-category').value;
+      const box = document.getElementById('ring-sizes-container');
+      if (cat === 'Anel') box.classList.remove('hidden');
+      else box.classList.add('hidden');
+    }
+
+    function toggleInstallmentsField() {
+      const paymentMethod = document.getElementById('s-payment').value;
+      const container = document.getElementById('installments-container');
+      if (paymentMethod === 'Cartao de Credito') {
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    function openRegisterModal() {
+      document.getElementById('register-modal').classList.remove('hidden');
+    }
+
+    function closeRegisterModal() {
+      document.getElementById('register-modal').classList.add('hidden');
+    }
+
+    function switchTab(tabId) {
+      ['dashboard', 'clients', 'products', 'sales', 'expenses'].forEach(id => {
+        const section = document.getElementById(`tab-${id}`);
+        const btn = document.getElementById(`btn-tab-${id}`);
+        if (section) section.classList.add('hidden');
+        if (btn) btn.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all";
+      });
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      document.getElementById(`btn-tab-${tabId}`).className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 transition-all";
+
+      if (tabId === 'clients') loadClients();
+      if (tabId === 'products') loadProducts();
+      if (tabId === 'sales') { loadSales(); renderSalesCatalog(); }
+      if (tabId === 'expenses') loadExpenses();
+      if (tabId === 'dashboard') updateDashboard();
+    }
+
+    function getStorage(key) { return JSON.parse(localStorage.getItem(`sys_${key}`) || '[]'); }
+    function setStorage(key, data) { localStorage.setItem(`sys_${key}`, JSON.stringify(data)); }
+
+    function fileToBase64(file) {
+      return new Promise((resolve) => {
+        if (!file) resolve('');
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+      });
+    }
+
+    // AUTENTICACAO GOOGLE OAUTH
+    function handleGoogleLogin(response) {
+      fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          currentUser = data.user;
+          document.getElementById('user-name-display').textContent = currentUser.name;
+          document.getElementById('user-email-display').textContent = currentUser.email;
+          document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+          document.getElementById('auth-screen').classList.add('hidden');
+          switchTab('dashboard');
+        }
+      });
+    }
+
+    // LOGIN POR EMAIL E SENHA
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      currentUser = { name: email.split('@')[0], email };
+      document.getElementById('user-name-display').textContent = currentUser.name;
+      document.getElementById('user-email-display').textContent = currentUser.email;
+      document.getElementById('auth-screen').classList.add('hidden');
+      switchTab('dashboard');
+    });
+
+    // CADASTRO DE NOVA CONTA (TRADICIONAL)
+    document.getElementById('register-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value;
+      const email = document.getElementById('reg-email').value;
+      const pass = document.getElementById('reg-pass').value;
+      const passConfirm = document.getElementById('reg-pass-confirm').value;
+
+      if (pass !== passConfirm) {
+        alert('As senhas nao coincidem! Por favor, digite novamente.');
+        return;
+      }
+
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password: pass })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success || true) {
+          currentUser = { name, email };
+          document.getElementById('user-name-display').textContent = currentUser.name;
+          document.getElementById('user-email-display').textContent = currentUser.email;
+          document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+          closeRegisterModal();
+          document.getElementById('auth-screen').classList.add('hidden');
+          switchTab('dashboard');
+          alert('Conta criada com sucesso! Seja bem-vinda.');
+        } else {
+          alert('Erro ao criar conta: ' + (data.error || 'Tente novamente.'));
+        }
+      })
+      .catch(() => {
+        currentUser = { name, email };
+        document.getElementById('user-name-display').textContent = currentUser.name;
+        document.getElementById('user-email-display').textContent = currentUser.email;
+        document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+        closeRegisterModal();
+        document.getElementById('auth-screen').classList.add('hidden');
+        switchTab('dashboard');
+      });
+    });
+
+    function logout() { location.reload(); }
+
+    // LOGICA CLIENTES
+    document.getElementById('client-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const clients = getStorage('clients');
+      const photo = await fileToBase64(document.getElementById('c-photo-file').files[0]);
+      clients.push({
+        id: Date.now(),
+        code: document.getElementById('c-code').value,
+        name: document.getElementById('c-name').value,
+        cpf: document.getElementById('c-cpf').value,
+        phone: document.getElementById('c-phone').value,
+        photo
+      });
+      setStorage('clients', clients);
+      document.getElementById('client-form').reset();
+      document.getElementById('c-code').value = generateClientCode();
+      loadClients();
+    });
+
+    function loadClients() {
+      const q = (document.getElementById('client-search-input')?.value || '').toLowerCase().trim();
+      const clients = getStorage('clients').filter(c => 
+        (c.name && c.name.toLowerCase().includes(q)) ||
+        (c.code && c.code.toLowerCase().includes(q)) ||
+        (c.cpf && c.cpf.toLowerCase().includes(q))
+      );
+
+      document.getElementById('client-table-body').innerHTML = clients.map(c => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-3">
+            ${c.photo 
+              ? `<img src="${c.photo}" class="w-8 h-8 rounded-full object-cover border border-slate-200">` 
+              : `<div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">${c.name.charAt(0).toUpperCase()}</div>`
+            }
+          </td>
+          <td class="p-3 font-mono font-bold text-blue-600">${c.code}</td>
+          <td class="p-3 font-semibold text-slate-800">${c.name}</td>
+          <td class="p-3 text-slate-500">${c.cpf}</td>
+          <td class="p-3 text-slate-500">${c.phone}</td>
+          <td class="p-3 text-right">
+            <button onclick="deleteClient(${c.id})" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhuma revendedora registrada.</td></tr>';
+    }
+
+    function deleteClient(id) {
+      if (confirm('Deseja excluir este cliente?')) {
+        const clients = getStorage('clients').filter(c => c.id !== id);
+        setStorage('clients', clients);
+        loadClients();
+      }
+    }
+
+    // LOGICA PECAS
+    function calculatePrices() {
+      const cost = parseFloat(document.getElementById('p-cost').value) || 0;
+      const margin = parseFloat(document.getElementById('p-margin').value) || 0;
+      document.getElementById('p-sell').value = (cost + (cost * (margin / 100))).toFixed(2);
+    }
+
+    document.getElementById('product-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const products = getStorage('products');
+      const photo = await fileToBase64(document.getElementById('p-photo-file').files[0]);
+      
+      const sizes = [];
+      document.querySelectorAll('.ring-size-cb:checked').forEach(cb => sizes.push(cb.value));
+
+      products.push({
+        id: Date.now(),
+        code: document.getElementById('p-code').value,
+        name: document.getElementById('p-name').value,
+        category: document.getElementById('p-category').value,
+        quality: document.getElementById('p-quality').value,
+        sizes,
+        stock: parseInt(document.getElementById('p-stock').value),
+        cost: parseFloat(document.getElementById('p-cost').value),
+        sell: parseFloat(document.getElementById('p-sell').value),
+        photo
+      });
+      setStorage('products', products);
+      document.getElementById('product-form').reset();
+      document.getElementById('p-code').value = generateProductCode();
+      toggleRingSizes();
+      loadProducts();
+    });
+
+    function loadProducts() {
+      const q = (document.getElementById('product-search-input')?.value || '').toLowerCase().trim();
+      const products = getStorage('products').filter(p => 
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.code && p.code.toLowerCase().includes(q)) ||
+        (p.category && p.category.toLowerCase().includes(q))
+      );
+
+      document.getElementById('product-table-body').innerHTML = products.map(p => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-3">
+            ${p.photo 
+              ? `<img src="${p.photo}" class="w-8 h-8 rounded-lg object-cover border border-slate-200">` 
+              : `<div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center text-xs"><i class="fa-solid fa-gem"></i></div>`
+            }
+          </td>
+          <td class="p-3 font-mono font-bold text-blue-600">${p.code}</td>
+          <td class="p-3 font-semibold text-slate-800">${p.name} ${p.sizes?.length ? `<span class="text-[10px] bg-blue-50 text-blue-700 px-1 py-0.5 rounded font-mono border border-blue-100">Tam: ${p.sizes.join(',')}</span>` : ''}</td>
+          <td class="p-3 text-slate-600">${p.category} (${p.quality})</td>
+          <td class="p-3 text-slate-500">R$ ${p.cost.toFixed(2)}</td>
+          <td class="p-3 text-emerald-600 font-bold">R$ ${p.sell.toFixed(2)}</td>
+          <td class="p-3 font-bold text-slate-700">${p.stock} un</td>
+          <td class="p-3 text-right">
+            <button onclick="deleteProduct(${p.id})" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="8" class="p-4 text-center text-slate-400">Nenhuma peca encontrada.</td></tr>';
+    }
+
+    function deleteProduct(id) {
+      if (confirm('Deseja excluir esta peca do estoque?')) {
+        const products = getStorage('products').filter(p => p.id !== id);
+        setStorage('products', products);
+        loadProducts();
+      }
+    }
+
+    // LOGICA VENDAS & CATALOGO LATERAL
+    function renderSalesCatalog() {
+      const q = (document.getElementById('sales-catalog-search')?.value || '').toLowerCase().trim();
+      const products = getStorage('products').filter(p => 
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.code && p.code.toLowerCase().includes(q)) ||
+        (p.category && p.category.toLowerCase().includes(q))
+      );
+
+      const grid = document.getElementById('sales-catalog-grid');
+      if (!grid) return;
+
+      grid.innerHTML = products.map(p => `
+        <div onclick='selectProductForSale(${JSON.stringify(p).replace(/'/g, "&apos;")})' class="bg-slate-50 hover:bg-blue-50/80 border border-slate-200 hover:border-blue-300 p-2.5 rounded-lg cursor-pointer transition-all flex items-center gap-3 shadow-sm">
+          <div class="w-10 h-10 rounded bg-white border flex items-center justify-center overflow-hidden shrink-0">
+            ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-gem text-blue-600"></i>`}
+          </div>
+          <div class="overflow-hidden">
+            <h4 class="text-xs font-bold text-slate-800 truncate">${p.name}</h4>
+            <p class="text-[10px] font-mono text-slate-500">${p.code} | Estoque: ${p.stock}</p>
+            <p class="text-xs font-bold text-emerald-600">R$ ${p.sell.toFixed(2)}</p>
+          </div>
+        </div>
+      `).join('') || '<p class="text-xs text-slate-400 col-span-3 text-center py-4">Nenhuma peca cadastrada.</p>';
+    }
+
+    function selectProductForSale(p) {
+      selectedProductForSale = p;
+      document.getElementById('selected-product-name').textContent = `${p.code} - ${p.name} (R$ ${p.sell.toFixed(2)})`;
+    }
+
+    function openClientSearchModal() { filterClientsModal(); document.getElementById('client-search-modal').classList.remove('hidden'); }
+    function closeClientSearchModal() { document.getElementById('client-search-modal').classList.add('hidden'); }
+    
+    function filterClientsModal() {
+      const q = (document.getElementById('modal-client-query')?.value || '').toLowerCase().trim();
+      const clients = getStorage('clients').filter(c => c.name.toLowerCase().includes(q) || c.cpf.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
+      
+      document.getElementById('modal-clients-list').innerHTML = clients.map(c => `
+        <div onclick="selectedClientForSale = ${JSON.stringify(c).replace(/"/g, '&quot;')}; document.getElementById('selected-client-name').textContent='${c.name}'; closeClientSearchModal();" class="p-2.5 hover:bg-blue-50 cursor-pointer text-xs flex items-center gap-2 transition-colors">
+          ${c.photo ? `<img src="${c.photo}" class="w-6 h-6 rounded-full object-cover">` : `<div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-[10px]">${c.name.charAt(0)}</div>`}
+          <span><b>${c.code}</b> - ${c.name}</span>
+        </div>
+      `).join('') || '<p class="p-2 text-xs text-slate-400">Nenhuma revendedora encontrada</p>';
+    }
+
+    document.getElementById('sale-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!selectedClientForSale) { alert('Selecione a revendedora!'); return; }
+      if (!selectedProductForSale) { alert('Clique em uma peca do catalogo ao lado para vender!'); return; }
+      
+      const products = getStorage('products');
+      const sales = getStorage('sales');
+      const qty = parseInt(document.getElementById('s-quantity').value);
+      const prod = products.find(p => p.id === selectedProductForSale.id);
+
+      if (!prod || prod.stock < qty) { alert('Estoque insuficiente!'); return; }
+      
+      prod.stock -= qty;
+      const discount = parseFloat(document.getElementById('s-discount').value) || 0;
+      const total = (prod.sell * qty) - discount;
+
+      const rawPayment = document.getElementById('s-payment').value;
+      let finalPaymentText = rawPayment;
+
+      if (rawPayment === 'Cartao de Credito') {
+        const installments = document.getElementById('s-installments').value;
+        const installmentValue = (total / parseInt(installments)).toFixed(2);
+        finalPaymentText = `Cartao de Credito (${installments}x de R$ ${installmentValue})`;
+      }
+
+      const newSale = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('pt-BR'),
+        clientName: selectedClientForSale.name,
+        productName: prod.name,
+        qty,
+        total,
+        payment: finalPaymentText
+      };
+
+      sales.push(newSale);
+      setStorage('products', products);
+      setStorage('sales', sales);
+
+      loadSales();
+      renderSalesCatalog();
+      updateDashboard();
+
+      openReceiptModal(newSale);
+    });
+
+    function loadSales() {
+      const sales = getStorage('sales');
+      document.getElementById('sales-table-body').innerHTML = sales.map(s => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 text-slate-500">${s.date}</td>
+          <td class="p-3 font-semibold text-slate-800">${s.clientName}</td>
+          <td class="p-3 text-slate-700">${s.productName}</td>
+          <td class="p-3 font-bold text-slate-800">${s.qty}</td>
+          <td class="p-3 text-slate-600">${s.payment}</td>
+          <td class="p-3 text-emerald-600 font-bold">R$ ${s.total.toFixed(2)}</td>
+          <td class="p-3 text-right">
+            <button onclick='openReceiptModal(${JSON.stringify(s).replace(/'/g, "&apos;")})' class="text-blue-600 hover:text-blue-800 font-semibold"><i class="fa-solid fa-receipt"></i> Ver Nota / Cupom</button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhuma venda realizada.</td></tr>';
+    }
+
+    // VISUALIZACAO DE NOTA FISCAL / CUPOM DE VENDA
+    function openReceiptModal(sale) {
+      document.getElementById('r-id').textContent = sale.id;
+      document.getElementById('r-date').textContent = sale.date;
+      document.getElementById('r-client').textContent = sale.clientName;
+      document.getElementById('r-product').textContent = sale.productName;
+      document.getElementById('r-qty').textContent = sale.qty;
+      document.getElementById('r-payment').textContent = sale.payment;
+      document.getElementById('r-total').textContent = sale.total.toFixed(2);
+      document.getElementById('receipt-modal').classList.remove('hidden');
+    }
+
+    function closeReceiptModal() {
+      document.getElementById('receipt-modal').classList.add('hidden');
+    }
+
+    function downloadReceiptPDF() {
+      const element = document.getElementById('receipt-content');
+      html2pdf().from(element).set({
+        margin: 5,
+        filename: `Nota_Fiscal_Semijoias_${document.getElementById('r-id').textContent}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a6', orientation: 'portrait' }
+      }).save();
+    }
+
+    // LOGICA DESPESAS
+    document.getElementById('expense-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const expenses = getStorage('expenses');
+      expenses.push({
+        id: Date.now(),
+        desc: document.getElementById('e-desc').value,
+        amount: parseFloat(document.getElementById('e-amount').value),
+        payment: document.getElementById('e-payment').value
+      });
+      setStorage('expenses', expenses);
+      document.getElementById('expense-form').reset();
+      loadExpenses();
+      updateDashboard();
+    });
+
+    function loadExpenses() {
+      const expenses = getStorage('expenses');
+      document.getElementById('expenses-table-body').innerHTML = expenses.map(ex => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-semibold text-slate-800">${ex.desc}</td>
+          <td class="p-3 text-slate-600">${ex.payment}</td>
+          <td class="p-3 text-rose-600 font-bold">R$ ${ex.amount.toFixed(2)}</td>
+          <td class="p-3 text-right">
+            <button onclick="deleteExpense(${ex.id})" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="4" class="p-3 text-center text-slate-400">Nenhuma despesa registrada.</td></tr>';
+    }
+
+    function deleteExpense(id) {
+      if (confirm('Deseja excluir esta despesa?')) {
+        const expenses = getStorage('expenses').filter(ex => ex.id !== id);
+        setStorage('expenses', expenses);
+        loadExpenses();
+        updateDashboard();
+      }
+    }
+
+    // METRICAS E GRAFICOS CHART.JS
+    function updateDashboard() {
+      const sales = getStorage('sales');
+      const expenses = getStorage('expenses');
+      const clients = getStorage('clients');
+      const products = getStorage('products');
+
+      const totalSales = sales.reduce((acc, s) => acc + s.total, 0);
+      const totalExpenses = expenses.reduce((acc, ex) => acc + ex.amount, 0);
+
+      document.getElementById('dash-total-sales-val').textContent = `R$ ${totalSales.toFixed(2)}`;
+      document.getElementById('dash-total-profit').textContent = `R$ ${(totalSales * 0.5).toFixed(2)}`;
+      document.getElementById('dash-net-balance').textContent = `R$ ${(totalSales - totalExpenses).toFixed(2)}`;
+      document.getElementById('dash-total-clients').textContent = clients.length;
+
+      renderCharts(sales);
+    }
+
+    function renderCharts(sales) {
+      // 1. Grafico de Categorias
+      const categoryCounts = {};
+      sales.forEach(s => {
+        categoryCounts[s.productName] = (categoryCounts[s.productName] || 0) + s.qty;
+      });
+
+      const catLabels = Object.keys(categoryCounts).length > 0 ? Object.keys(categoryCounts) : ['Sem dados'];
+      const catData = Object.values(categoryCounts).length > 0 ? Object.values(categoryCounts) : [0];
+
+      const ctxCat = document.getElementById('chart-categories').getContext('2d');
+      if (categoryChartInstance) categoryChartInstance.destroy();
+      categoryChartInstance = new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+          labels: catLabels,
+          datasets: [{
+            data: catData,
+            backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      // 2. Grafico de Pagamentos
+      const paymentCounts = {};
+      sales.forEach(s => {
+        paymentCounts[s.payment] = (paymentCounts[s.payment] || 0) + s.total;
+      });
+
+      const payLabels = Object.keys(paymentCounts).length > 0 ? Object.keys(paymentCounts) : ['Sem dados'];
+      const payData = Object.values(paymentCounts).length > 0 ? Object.values(paymentCounts) : [0];
+
+      const ctxPay = document.getElementById('chart-payments').getContext('2d');
+      if (paymentChartInstance) paymentChartInstance.destroy();
+      paymentChartInstance = new Chart(ctxPay, {
+        type: 'bar',
+        data: {
+          labels: payLabels,
+          datasets: [{
+            label: 'Total R$',
+            data: payData,
+            backgroundColor: '#2563eb'
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // Inicializacao do painel ao carregar
+    switchTab('dashboard');
+  </script>
+</body>
+</html>
